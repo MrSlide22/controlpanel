@@ -1,5 +1,17 @@
-<link rel="import" href="../../bower_components/polymer/polymer.html">
-<link rel="import" href="./weather/my-weather.html">
+<link rel="import" href="../../../bower_components/polymer/polymer.html">
+<link rel="import" href="../../../bower_components/iron-ajax/iron-ajax.html">
+<link rel="import" href="../../../bower_components/iron-ajax/iron-ajax.html">
+<link rel="import" href="../../../bower_components/paper-card/paper-card.html">
+<link rel="import" href="../../../bower_components/iron-icons/iron-icons.html">
+<link rel="import" href="../../../bower_components/iron-icon/iron-icon.html">
+<link rel="import" href="../../../bower_components/iron-image/iron-image.html">
+<link rel="import" href="../../../bower_components/paper-listbox/paper-listbox.html">
+<link rel="import" href="../../../bower_components/paper-item/paper-item.html">
+<link rel="import" href="../../../bower_components/paper-button/paper-button.html">
+<link rel="import" href="../../../bower_components/paper-icon-button/paper-icon-button.html">
+<link rel="import" href="../../../bower_components/paper-menu-button/paper-menu-button.html">
+<link rel="import" href="../env.html">
+<link rel="stylesheet" href="../../../bower_components/flexboxgrid/dist/flexboxgrid.min.css">
 
 <dom-module id="my-weather">
     <template>
@@ -7,9 +19,75 @@
       :host {
         display: block;
       }
+
+      paper-card{
+          width: 100%;
+      }
+
+      #weather-head{
+          display: flex;
+          align-items: center;
+          justify-content: space-around;
+      }
+
+      #weather-head h1{
+          text-transform: capitalize;
+      }
+
+      .forecastDay span{
+        font-size: 0.8em;
+      }
+
+      paper-menu-button{
+          float: right;
+      }
     </style>
-    <h2>Hello [[prop1]]</h2>
-  </template>
+
+    <iron-ajax id="weatherReq"
+        auto
+        handle-as="json"
+        on-response="handleResponse"
+        debounce-duration="300"></iron-ajax>
+
+    <iron-ajax id="forecastReq"
+        auto
+        handle-as="json"
+        on-response="handleForecastResponse"
+        debounce-duration="300"></iron-ajax>
+
+    <paper-card>
+        <div class="card-content">
+            <paper-menu-button vertical-align="top" horizontal-align="right">
+                <paper-icon-button icon="more-horiz" slot="dropdown-trigger" alt="bottom align"></paper-icon-button>
+                <paper-listbox slot="dropdown-content">
+                    <paper-item>Predicción</paper-item>
+                    <paper-item>Mapa</paper-item>
+                </paper-listbox>
+            </paper-menu-button>
+            <div class="row" id="weather-head">
+                <div class="col-xs-12 col-sm-4">
+                    <iron-image  style="position: relative;width: 100%;height: 0;padding-bottom: 100%;" sizing="cover" preload fade src="{{icon}}"></iron-image>
+                </div>
+                <div class="col-xs-12 col-sm-8">
+                    <h1>
+                        {{description}}
+                    </h1>
+                    <h3><small>Min:</small> {{temp_min}}ºC / <small>Max:</small> {{temp_max}}ºC</h3>
+                </div>
+            </div>
+            <div class="row">
+                <template id="forecastTemplate" is="dom-repeat" items="{{forecast}}" as="day">
+
+                    <div class="col-xs-12 col-sm-2 forecastDay">
+                        <iron-image  style="position: relative;width: 100%;height: 0;padding-bottom: 100%;" sizing="cover" preload fade src="{{day.icon}}"></iron-image>
+                        <span>{{day.min}} / {{day.max}}</span>
+                    </div>
+                </template>
+    </div>
+    </div>
+    </paper-card>
+
+    </template>
 
     <script>
         Polymer({
@@ -18,16 +96,120 @@
 
             properties: {
                 key: {
-                    type: String
+                    type: String,
+                    value: window.weather.key
                 },
                 lat: {
-                    type: Number
+                    type: Number,
+                    value: 40.440165
                 },
                 lon: {
+                    type: Number,
+                    value: -3.662960
+                },
+                description: {
+                    type: String
+                },
+                icon: {
+                    type: String
+                },
+                temp_max: {
                     type: Number
+                },
+                temp_min: {
+                    type: Number
+                },
+                forecast: {
+                    type: Array,
+                    value: []
                 }
             },
 
+            attached: function() {
+
+                const req = this.$.weatherReq;
+
+                req.url = window.weather.uri;
+                req.set('params', {
+                    'lat': this.lat,
+                    'lon': this.lon,
+                    'lang': 'es',
+                    'APPID': window.weather.key,
+                    'units': 'metric'
+                });
+
+                const forReq = this.$.forecastReq;
+
+                forReq.url = window.weather.forecast;
+                forReq.set('params', {
+                    'lat': this.lat,
+                    'lon': this.lon,
+                    'lang': 'es',
+                    'APPID': window.weather.key,
+                    'units': 'metric'
+                });
+            },
+
+            handleResponse: function(response) {
+
+                const res = response.detail.response;
+
+                this.description = res.weather[0].description;
+                const iconPath = `${window.appBasePath}/weather/weather-iconset/${res.weather[0].icon}.png`;
+                this.icon = iconPath;
+                this.temp_max = res.main.temp_max;
+                this.temp_min = res.main.temp_min;
+            },
+
+            handleForecastResponse: function(response) {
+                const res = response.detail.response;
+
+                const forecastByDay = this._groupByByDate(res.list, function(item) {
+                    return new Date(item.dt * 1000).getDate();
+                });
+
+                for (i in forecastByDay) {
+
+                    this.push('forecast', this._getDayDetails(forecastByDay[i]));
+                }
+            },
+            _groupByByDate: function(xs, fn) {
+                return xs.reduce(function(rv, x, index) {
+
+                    (rv[fn(x)] = rv[fn(x)] || []).push(x);
+                    return rv;
+                }, {});
+            },
+            _getDayDetails(day) {
+
+                const ret = {
+                    min: undefined,
+                    max: undefined
+                }
+                for (i in day) {
+
+                    const hour = new Date(day[i].dt_txt).getHours();
+
+                    if (hour >= 9) {
+
+                        if (!ret.min || ret.min > day[i].main.temp_min) {
+                            ret.min = Math.floor(day[i].main.temp_min);
+                        }
+
+                        if (!ret.max || ret.max < day[i].main.temp_max) {
+                            ret.max = Math.floor(day[i].main.temp_max);
+                        }
+                    }
+                }
+
+                const middleHour = day[Math.floor(day.length / 2)];
+                const iconPath = `${window.appBasePath}/weather/weather-iconset/${middleHour.weather[0].icon}.png`;
+                ret.icon = iconPath;
+
+                ret.date = day[0].dt_txt;
+
+                return ret;
+            }
         });
     </script>
 </dom-module>

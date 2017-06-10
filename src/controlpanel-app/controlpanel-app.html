@@ -1,5 +1,6 @@
 <link rel="import" href="../../bower_components/polymer/polymer.html">
 <link rel="import" href="./weather/my-weather.html">
+<link rel="stylesheet" href="../../bower_components/flexboxgrid/dist/flexboxgrid.min.css">
 
 <dom-module id="controlpanel-app">
     <template>
@@ -8,8 +9,9 @@
         display: block;
       }
     </style>
-    <h2>Hello [[prop1]]</h2>
-    <my-weather key=""></my-weather>
+    <div class="row">
+      <my-weather key="" class="col-xs-12 col-sm-6"></my-weather>
+    </div>
   </template>
 
     <script>
