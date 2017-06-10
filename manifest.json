@@ -1,0 +1,6 @@
+{
+  "name": "controlpanel",
+  "short_name": "controlpanel",
+  "start_url": "/",
+  "display": "standalone"
+}
