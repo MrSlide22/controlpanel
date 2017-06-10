@@ -1,7 +1,7 @@
 <link rel="import" href="../../bower_components/polymer/polymer.html">
 <link rel="import" href="./weather/my-weather.html">
 
-<dom-module id="controlpanel-app">
+<dom-module id="my-weather">
     <template>
     <style>
       :host {
@@ -9,15 +9,24 @@
       }
     </style>
     <h2>Hello [[prop1]]</h2>
-    <my-weather key=""></my-weather>
   </template>
 
     <script>
         Polymer({
 
-            is: 'controlpanel-app',
+            is: 'my-weather',
 
-            properties: {},
+            properties: {
+                key: {
+                    type: String
+                },
+                lat: {
+                    type: Number
+                },
+                lon: {
+                    type: Number
+                }
+            },
 
         });
     </script>
