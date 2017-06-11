@@ -35,9 +35,24 @@
       }
 
       .forecastDay span{
-        font-size: 0.8em;
+          display: block;
+          text-align: center;
       }
 
+      @media screen and (max-width: 870px){
+        .forecastDay span{
+           font-size: 0.8em;
+        }
+      }
+
+      @media screen and (max-width: 768px){
+        paper-card{
+            text-align: center;
+        }
+        .forecastDay span{
+           font-size: 1.5em;
+        }
+      }
       paper-menu-button{
           float: right;
       }
